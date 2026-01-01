@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTMX サンプル</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        h1 {
+            color: #3d72b4;
+            border-bottom: 3px solid #3d72b4;
+            padding-bottom: 10px;
+        }
+
+        h2 {
+            color: #555;
+            margin-top: 40px;
+        }
+
+        .demo-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        button {
+            background-color: #3d72b4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #2d5a8c;
+        }
+
+        input[type="text"], input[type="email"] {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .result-box {
+            background-color: #e8f4e8;
+            border: 1px solid #4caf50;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+
+        .htmx-indicator {
+            display: none;
+        }
+
+        .htmx-request .htmx-indicator {
+            display: inline-block;
+        }
+
+        .htmx-request.htmx-indicator {
+            display: inline-block;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3d72b4;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .todo-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: #f9f9f9;
+            margin: 5px 0;
+            border-radius: 5px;
+        }
+
+        .todo-item input[type="checkbox"] {
+            margin-right: 10px;
+        }
+
+        .counter {
+            font-size: 48px;
+            font-weight: bold;
+            color: #3d72b4;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .counter-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #3d72b4;
+            color: white;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .search-input {
+            margin-bottom: 15px;
+        }
+
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .code-block {
+            background-color: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>HTMX サンプルページ</h1>
+
+    <p>HTMX は、HTML属性を使って AJAX、CSS トランジション、WebSocket などの機能を簡単に実装できるライブラリです。</p>
+
+    <!-- サンプル1: シンプルなGETリクエスト -->
+    <div class="demo-section">
+        <h2>1. ボタンクリックでコンテンツを読み込む</h2>
+        <p>ボタンをクリックすると、HTMLフラグメントを取得して表示します。</p>
+        <div class="code-block">
+            &lt;button hx-get="fragments/greeting.html" hx-target="#greeting-result"&gt;
+        </div>
+        <button hx-get="fragments/greeting.html"
+                hx-target="#greeting-result"
+                hx-swap="innerHTML">
+            挨拶を取得
+            <span class="htmx-indicator spinner"></span>
+        </button>
+        <div id="greeting-result" class="result-box" style="display:none;"></div>
+    </div>
+
+    <!-- サンプル2: カウンター -->
+    <div class="demo-section">
+        <h2>2. インタラクティブカウンター</h2>
+        <p>ボタンクリックでカウントを増減します（クライアントサイドで動作）。</p>
+        <div id="counter-container">
+            <div class="counter" id="counter-value">0</div>
+            <div class="counter-buttons">
+                <button onclick="updateCounter(-1)">- 減らす</button>
+                <button onclick="updateCounter(1)">+ 増やす</button>
+                <button onclick="resetCounter()">リセット</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- サンプル3: クリックで切り替え -->
+    <div class="demo-section">
+        <h2>3. クリックでコンテンツを切り替え</h2>
+        <p><code>hx-swap-oob</code> を使って要素を入れ替えます。</p>
+        <div class="code-block">
+            &lt;button hx-get="fragments/toggle-on.html" hx-target="#toggle-content"&gt;
+        </div>
+        <div id="toggle-content">
+            <button hx-get="fragments/toggle-on.html"
+                    hx-target="#toggle-content"
+                    hx-swap="outerHTML">
+                オンにする
+            </button>
+        </div>
+    </div>
+
+    <!-- サンプル4: 検索機能 -->
+    <div class="demo-section">
+        <h2>4. リアルタイム検索</h2>
+        <p>入力するとリアルタイムで検索結果が表示されます。</p>
+        <div class="code-block">
+            &lt;input hx-get="fragments/search.html" hx-trigger="keyup changed delay:300ms"&gt;
+        </div>
+        <input type="text"
+               class="search-input"
+               placeholder="検索キーワードを入力..."
+               hx-get="fragments/search.html"
+               hx-trigger="keyup changed delay:300ms"
+               hx-target="#search-results"
+               name="q">
+        <div id="search-results"></div>
+    </div>
+
+    <!-- サンプル5: フォーム送信 -->
+    <div class="demo-section">
+        <h2>5. フォーム送信</h2>
+        <p>フォームの送信を HTMX で処理します。</p>
+        <div class="code-block">
+            &lt;form hx-post="fragments/form-result.html" hx-target="#form-result"&gt;
+        </div>
+        <form hx-post="fragments/form-result.html"
+              hx-target="#form-result"
+              hx-swap="innerHTML">
+            <div style="margin-bottom: 15px;">
+                <label for="name">名前:</label><br>
+                <input type="text" id="name" name="name" placeholder="お名前を入力">
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label for="email">メール:</label><br>
+                <input type="email" id="email" name="email" placeholder="メールアドレスを入力">
+            </div>
+            <button type="submit">
+                送信
+                <span class="htmx-indicator spinner"></span>
+            </button>
+        </form>
+        <div id="form-result"></div>
+    </div>
+
+    <!-- サンプル6: Todoリスト -->
+    <div class="demo-section">
+        <h2>6. Todo リスト</h2>
+        <p>タスクの追加・削除ができるTodoリストです。</p>
+        <div id="todo-list">
+            <div class="todo-item">
+                <input type="checkbox" onchange="this.parentElement.style.textDecoration = this.checked ? 'line-through' : 'none'">
+                <span>HTMXを学ぶ</span>
+                <button style="margin-left: auto; padding: 5px 10px; font-size: 12px;"
+                        onclick="this.parentElement.remove()">削除</button>
+            </div>
+            <div class="todo-item">
+                <input type="checkbox" onchange="this.parentElement.style.textDecoration = this.checked ? 'line-through' : 'none'">
+                <span>サンプルを作成する</span>
+                <button style="margin-left: auto; padding: 5px 10px; font-size: 12px;"
+                        onclick="this.parentElement.remove()">削除</button>
+            </div>
+        </div>
+        <div style="margin-top: 15px; display: flex; gap: 10px;">
+            <input type="text" id="new-todo" placeholder="新しいタスク..." style="flex: 1;">
+            <button onclick="addTodo()">追加</button>
+        </div>
+    </div>
+
+    <!-- サンプル7: テーブルの遅延読み込み -->
+    <div class="demo-section">
+        <h2>7. データテーブル</h2>
+        <p>テーブルデータを遅延読み込みします。</p>
+        <div class="code-block">
+            &lt;tbody hx-get="fragments/table-data.html" hx-trigger="load"&gt;
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>名前</th>
+                    <th>ステータス</th>
+                </tr>
+            </thead>
+            <tbody hx-get="fragments/table-data.html"
+                   hx-trigger="load"
+                   hx-swap="innerHTML">
+                <tr>
+                    <td colspan="3" style="text-align: center;">
+                        <span class="spinner"></span> 読み込み中...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- サンプル8: 確認ダイアログ -->
+    <div class="demo-section">
+        <h2>8. 確認ダイアログ付きアクション</h2>
+        <p><code>hx-confirm</code> を使って確認ダイアログを表示します。</p>
+        <div class="code-block">
+            &lt;button hx-delete="..." hx-confirm="本当に削除しますか？"&gt;
+        </div>
+        <button hx-get="fragments/deleted.html"
+                hx-target="#delete-result"
+                hx-confirm="本当にこのアイテムを削除しますか？">
+            削除する
+        </button>
+        <div id="delete-result"></div>
+    </div>
+
+    <script>
+        // カウンター機能
+        let count = 0;
+
+        function updateCounter(delta) {
+            count += delta;
+            document.getElementById('counter-value').textContent = count;
+            document.getElementById('counter-value').classList.add('fade-in');
+            setTimeout(() => {
+                document.getElementById('counter-value').classList.remove('fade-in');
+            }, 500);
+        }
+
+        function resetCounter() {
+            count = 0;
+            document.getElementById('counter-value').textContent = count;
+        }
+
+        // Todo追加機能
+        function addTodo() {
+            const input = document.getElementById('new-todo');
+            const text = input.value.trim();
+            if (text) {
+                const todoList = document.getElementById('todo-list');
+                const todoItem = document.createElement('div');
+                todoItem.className = 'todo-item fade-in';
+                todoItem.innerHTML = `
+                    <input type="checkbox" onchange="this.parentElement.style.textDecoration = this.checked ? 'line-through' : 'none'">
+                    <span>${text}</span>
+                    <button style="margin-left: auto; padding: 5px 10px; font-size: 12px;"
+                            onclick="this.parentElement.remove()">削除</button>
+                `;
+                todoList.appendChild(todoItem);
+                input.value = '';
+            }
+        }
+
+        // Enterキーでタスク追加
+        document.getElementById('new-todo').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addTodo();
+            }
+        });
+
+        // 結果ボックスの表示制御
+        document.body.addEventListener('htmx:afterSwap', function(event) {
+            if (event.target.id === 'greeting-result') {
+                event.target.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
